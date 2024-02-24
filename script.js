@@ -7,6 +7,8 @@ const websiteNameEl = document.querySelector("#website-name");
 const websiteUrlEl = document.querySelector("#website-url");
 const bookmarksContainer = document.querySelector("#bookmarks-container");
 
+let bookmarks = [];
+
 /* Show Modal, Focus on input */
 
 const showModal = () => {
@@ -32,7 +34,6 @@ const validate = (nameValue, urlValue) => {
         return false;
     }
     if (urlValue.match(regex)) {
-        alert("match");
         return true;
     }
 
@@ -40,6 +41,60 @@ const validate = (nameValue, urlValue) => {
         alert("Please provide a valud web address");
         return false;
     }
+};
+
+//Build bookmarks DOM
+
+const buildBookmarks = () => {
+    //Remove all bookmark elements
+    bookmarksContainer.textContent = "";
+    //Buid Items
+    bookmarks.forEach((bookmark) => {
+        const { name, url } = bookmark;
+        //Item
+        const item = document.createElement("div");
+        item.classList.add("item");
+        const closeIcon = document.createElement("i");
+        closeIcon.classList.add("fas", "fa-times");
+        closeIcon.setAttribute("title", "Delete Bookmark");
+        closeIcon.setAttribute("onclick", `deleteBookmark('${url}')`);
+        //Favicon / link container
+        const linkInfo = document.createElement("div");
+        linkInfo.classList.add("name");
+        const favicon = document.createElement("img");
+        favicon.setAttribute(
+            "src",
+            `https://s2.googleusercontent.com/s2/favicons?domain=${url}`
+        );
+        favicon.setAttribute("alt", "Favicon");
+        const link = document.createElement("a");
+        link.setAttribute("href", `${url}`);
+        link.setAttribute("target", "_blank");
+        link.textContent = name;
+        //Appent to bookmarks container
+        linkInfo.append(favicon, link);
+        item.append(closeIcon, linkInfo);
+        bookmarksContainer.appendChild(item);
+    });
+};
+
+//Fetch bookmarks
+
+const fetchBookmarks = () => {
+    if (localStorage.getItem("bookmarks")) {
+        bookmarks = JSON.parse(localStorage.getItem("bookmarks"));
+    } else {
+        bookmarks = [];
+        localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
+    }
+    buildBookmarks();
+};
+
+//Delete Bookmark
+const deleteBookmark = (url) => {
+    bookmarks = bookmarks.filter((bookmark) => bookmark.url !== url);
+    localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
+    fetchBookmarks();
 };
 
 // Handle data from form
@@ -51,11 +106,26 @@ const storeBookmark = (event) => {
     if (!urlValue.includes("http://", "https://")) {
         urlValue = `https://${urlValue}`;
     }
-    console.log(nameValue, urlValue);
+
     if (!validate(nameValue, urlValue)) {
         return false;
     }
+
+    const bookmark = {
+        name: nameValue,
+        url: urlValue,
+    };
+
+    bookmarks.push(bookmark);
+    localStorage.setItem("bookmarks", JSON.stringify(bookmarks));
+    fetchBookmarks();
+
+    bookmarkForm.reset();
+    websiteNameEl.focus();
 };
 
 //Event listeners
 bookmarkForm.addEventListener("submit", storeBookmark);
+
+//inial load
+fetchBookmarks();
